@@ -1,3 +1,3 @@
 #! /bin/bash
 
-echo "Testing Repo on Platform"
+echo "Testing Repo on both Platform"
