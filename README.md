@@ -1,0 +1,2 @@
+# ArVideoGen
+Autoregressive Video Generation
