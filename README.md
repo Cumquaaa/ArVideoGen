@@ -5,7 +5,7 @@ This project implements an autoregressive video generation model based on the pa
 
 ## Progress
 
-- [ ] Implement dummy version of Gneration Model
+- [X] Implement trainable dummy version of Gneration Model (No performance yet!)
 - [ ] Implement Image Gneration Model
 - [ ] Implement Video Gneration Model
 
@@ -23,39 +23,35 @@ This project implements an autoregressive video generation model based on the pa
 To train the model, run:
 
 ```bash
-python train.py
+bash entry.sh --task train --model_config small
 ```
-
-### Sampling
-To generate samples from the trained model, run:
-
-```bash
-python sample.py
-```
-
 
 ### Evaluation
 To evaluate the model, run:
 
 ```bash
-python evaluate.py (Not Implemented Yet)
+bash entry.sh --task evaluate --model_config small
 ```
 
 ## Project Structure
 
 ```shell
 autoregressive_image_generation/
+├── ckpts/ # Folder for storing checkpoints
 ├── data/
 │ └── prepare_data.py # Scripts for data preprocessing
+├── logs/ # Folder for training loss plots
+├── model_configs/
+│ └── small.json # Config for dummy version
 ├── models/
-│ ├── init.py # Initialize the models module
 │ ├── autoregressive.py # Autoregressive model definition
 │ └── diffusion.py # Denoising diffusion network definition
 ├── utils/
-│ ├── init.py # Initialize the utils module
-│ ├── losses.py # Implementation of dummy loss function
-│ ├── sampling.py # Sampling methods for inference
-│ └── metrics.py # Dummy evaluation metrics
+│ ├── args.py # Script for parsing args
+│ ├── metrics.py # Dummy evaluation metrics
+│ ├── plot.py # Script for plotting loss
+│ └── sampling.py # Sampling methods for inference
+├── entry.sh # Entry for all scripts with args processsing
 ├── train.py # Main training script
 ├── sample.py # Script for generating samples
 ├── evaluate.py # Script for evaluating the model

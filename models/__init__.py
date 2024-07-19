@@ -1,2 +1,2 @@
 from .autoregressive import AutoregressiveModel
-from .diffusion import DiffusionNetwork
+from .diffusion import DiffusionLoss

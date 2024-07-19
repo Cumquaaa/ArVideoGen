@@ -2,24 +2,33 @@ import torch
 import torch.optim as optim
 from data.prepare_data import get_dataloader
 from models.autoregressive import AutoregressiveModel
-from models.diffusion import DiffusionNetwork
-from utils.losses import diffusion_loss
+from models.diffusion import DiffusionLoss
+from utils.args import parse_config
+from utils.plot import plot_losses
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def train():
-    model = AutoregressiveModel().to(device)
-    diffusion_model = DiffusionNetwork().to(device)
+    config = parse_config()
     
-    optimizer = optim.Adam(list(model.parameters()) + list(diffusion_model.parameters()), lr=0.001)
+    model = AutoregressiveModel(width=config['trans_width'], depth=config['trans_depth']).to(device)
+    diffusion_loss_module = DiffusionLoss(depth=config['mlp_depth'], width=config['mlp_width']).to(device)
+    
+    optimizer = optim.Adam(list(model.parameters()) + list(diffusion_loss_module.parameters()), lr=0.001)
     train_loader, test_loader = get_dataloader()
     
     model.train()
-    diffusion_model.train()
+    diffusion_loss_module.train()
+    
+    train_losses = []
+    test_losses = []
     
     for epoch in range(5):
+        model.train()
+        diffusion_loss_module.train()
+        
         train_loss = 0.0
-        for batch in train_loader:
+        for i, batch in enumerate(train_loader):
             images, _ = batch
             images = images.to(device)
             
@@ -28,27 +37,31 @@ def train():
             # Autoregressive model predicts a vector z for each token
             z = model(images)
             
-            # Denoising diffusion network models the distribution p(x|z)
-            x_recon = diffusion_model(z)
-            
             # Compute the Diffusion Loss
-            loss = diffusion_loss(x_recon, images)
+            loss = diffusion_loss_module(z, images)
             
             # Backpropagation
             loss.backward()
             optimizer.step()
             
             train_loss += loss.item()
+            train_losses.append(loss.item())
+            
+            if (i + 1) % 200 == 0:
+                print(f"Epoch [{epoch+1}/5], Iter [{i+1}/{len(train_loader)}], Loss: {loss.item():.4f}")
         
         train_loss /= len(train_loader)
         
-        test_loss = evaluate(model, diffusion_model, test_loader)
+        test_loss = evaluate(model, diffusion_loss_module, test_loader)
+        test_losses.append(test_loss)
         
         print(f"Epoch [{epoch+1}/5], Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}")
         
         # Save checkpoints
         torch.save(model.state_dict(), f"./ckpts/autoregressive_model_epoch{epoch+1}.pth")
-        torch.save(diffusion_model.state_dict(), f"./ckpts/diffusion_model_epoch{epoch+1}.pth")
+        torch.save(diffusion_loss_module.state_dict(), f"./ckpts/diffusion_model_epoch{epoch+1}.pth")
+    
+    plot_losses(train_losses)
 
 def evaluate(model, diffusion_model, dataloader):
     model.eval()
@@ -63,11 +76,8 @@ def evaluate(model, diffusion_model, dataloader):
             # Autoregressive model predicts a vector z for each token
             z = model(images)
             
-            # Denoising diffusion network models the distribution p(x|z)
-            x_recon = diffusion_model(z)
-            
             # Compute the Diffusion Loss
-            loss = diffusion_loss(x_recon, images)
+            loss = diffusion_model(z, images)
             
             total_loss += loss.item()
     

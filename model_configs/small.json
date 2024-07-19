@@ -1,0 +1,6 @@
+{
+    "mlp_width": 784,
+    "mlp_depth": 3,
+    "trans_width": 128,
+    "trans_depth": 4
+}
