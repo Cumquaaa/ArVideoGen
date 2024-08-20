@@ -7,6 +7,7 @@ class TransformerBlock(nn.Module):
         super(TransformerBlock, self).__init__()
         self.norm1 = nn.LayerNorm(width)
         self.attn = nn.MultiheadAttention(embed_dim=width, num_heads=8)
+        # Memory efficient attention for block attn? Use flash attn.
         self.norm2 = nn.LayerNorm(width)
         self.fc1 = nn.Linear(width, 4 * width)
         self.fc2 = nn.Linear(4 * width, width)
@@ -30,6 +31,8 @@ class AutoregressiveModel(nn.Module):
         self.blocks = nn.ModuleList([TransformerBlock(width) for _ in range(depth)])
         self.norm = nn.LayerNorm(width)
         self.fc_out = nn.Linear(width, 784)
+        # Add 2 embedding layers for x and y axis. Maybe try learnable(32*1024)/RoPE(Is there 2D?).
+        # Make alignments to Llama. Use Llama_pretrain_model architecture directly for AR.
     
     def forward(self, x):
         x = x.view(x.size(0), -1)

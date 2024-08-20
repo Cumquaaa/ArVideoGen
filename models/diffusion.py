@@ -5,6 +5,7 @@ import torch.nn.functional as F
 class SimpleMLP(nn.Module):
     def __init__(self, depth, width):
         super(SimpleMLP, self).__init__()
+        # Add a time embedding layer. Linear layer with dim 1*dim, with bias.
         self.depth = depth
         self.width = width
         layers = []
@@ -22,7 +23,7 @@ class SimpleMLP(nn.Module):
         # Expand timestep to match dimensions
         timestep_expanded = timestep.expand(batch_size, x_t_flat.size(1))
         
-        # Concatenate along the last dimension
+        # Concatenate along the last dimension, add a seq_len dim
         combined_input = x_t_flat + timestep_expanded + z
         return self.net(combined_input)
 
@@ -36,9 +37,10 @@ class GaussianDiffusion:
     
     def p_sample(self, net, x, t, z):
         # Simplified example of p_sample
+        # Search: V prediction, between noise pred and x pred (Use predicted clean x as objective for time step).
         noise_pred = net(x, t, z)
         noise_pred = noise_pred.view(x.size())  # Reshape noise_pred to match x's shape
-        return x - noise_pred * (0.1 * t.view(-1, 1, 1, 1))
+        return x - noise_pred * (0.1 * t.view(-1, 1, 1, 1)) # Check on 0.1
 
 class DiffusionLoss(nn.Module):
     def __init__(self, depth=2, width=1024):
@@ -49,6 +51,7 @@ class DiffusionLoss(nn.Module):
     def forward(self, z, x):
         noise = torch.randn_like(x)
         timestep = torch.randint(0, self.diffusion.num_timesteps, (x.size(0),), device=x.device).float()
+        # Absolute position embedding. Add projection before. Look up DiT implementation.
         timestep = timestep.view(-1, 1)
         
         x_t = self.diffusion.q_sample(x, timestep, noise)

@@ -34,11 +34,24 @@ def train():
             
             optimizer.zero_grad()
             
+            # Add preprocessing module to linearly project raw pixels to a lower dimension. Ref DiT/FuYu-Flexible Generation.
+            # Roughly equals VAE's tokenization step.
+            # (256*256, seq_len)*3 => 128*128*? => (32*32)*1024 (bottle-neck)
+            # Decrease seq_len, find best patch size.
+            # Patch first, then project with common module.
+            
+            # Ref ImageGPT? AIM - Apple, patchify.
+            
             # Autoregressive model predicts a vector z for each token
-            z = model(images)
+            # Leave out bos/eos
+            z = model(images) # Output dim should be batch_size * seq_len * hidden.
+            # Check on mask. Bidirectional attention? Try block inference, for further implementation.
+            # Maybe add z-loss?
             
             # Compute the Diffusion Loss
-            loss = diffusion_loss_module(z, images)
+            loss = diffusion_loss_module(z, images) # Concept of noisy-x, see x_t in DiT.
+            # Take the loss out, and add linear layers for decoding hidden. Maybe more params for decoder. Ref VAE.
+            # Write out all dims and loss before coding.
             
             # Backpropagation
             loss.backward()
